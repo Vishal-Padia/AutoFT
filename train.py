@@ -13,16 +13,14 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
 )
-from custom_logging import getLogger
-
-# Import the logger
-logger = getLogger("AutoFT")
+from custom_logging import logger
 
 
 def finetune_model(
     dataset_name,
     config_name,
     model_name,
+    hf_token,
     wandb_api_key,
     wandb_project_name,
     task_type,
@@ -72,6 +70,8 @@ def finetune_model(
                 dataset = Dataset.from_json(file_upload)
         else:
             if config_name:
+                dataset_name = str(dataset_name)
+                config_name = str(config_name)
                 dataset = load_dataset(dataset_name, config_name)
             else:
                 dataset = load_dataset(dataset_name)
@@ -82,23 +82,27 @@ def finetune_model(
 
     # Load the pre-trained model and tokenizer
     try:
+        logger.info(f"Loading the tokenizer for model: {model_name}...")
+        tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
+
+        if tokenizer.pad_token is None:
+            logger.info("Padding token not found. Adding padding token...")
+            tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+            logger.info("Padding token added successfully!")
+        logger.info("Tokenizer loaded successfully!")
+
         logger.info(f"Loading model: {model_name}...")
         if task_type == "Text Generation":
-            model = AutoModelForCausalLM.from_pretrained(model_name)
+            model = AutoModelForCausalLM.from_pretrained(model_name, token=hf_token)
         elif task_type == "Summarization":
-            model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_name, token=hf_token)
         elif task_type == "Sequence Classification":
-            model = AutoModelForSequenceClassification.from_pretrained(model_name)
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_name, token=hf_token
+            )
         else:
             raise ValueError(f"Unsupported task type: {task_type}")
-
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-        # Set the padding token if it doesn't exist
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token  # Use EOS token as padding token
-
-        logger.info("Model and tokenizer loaded successfully!")
+        logger.info("Model loaded successfully!")
     except Exception as e:
         logger.error(f"Failed to load model: {str(e)}")
         raise ValueError(f"Failed to load model: {str(e)}")
@@ -107,12 +111,14 @@ def finetune_model(
     logger.info("Tokenizing dataset...")
 
     def tokenize_function(examples):
-        return tokenizer(
+        tokenized = tokenizer(
             examples[input_column],
             padding="max_length",  # Pad to the maximum length
             truncation=True,  # Truncate to the maximum length
             max_length=512,  # Set a reasonable max length
         )
+        tokenized["labels"] = tokenized["labels"].copy()
+        return tokenized
 
     tokenized_dataset = dataset.map(tokenize_function, batched=True)
     logger.info("Dataset tokenized successfully!")
@@ -159,7 +165,7 @@ def finetune_model(
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         optimizers=(optimizer, None),
         compute_metrics=lambda eval_pred: {
             "accuracy": (eval_pred.label_ids == eval_pred.predictions.argmax(-1)).mean()

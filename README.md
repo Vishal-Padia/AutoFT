@@ -10,16 +10,15 @@ Then the user will click on the finetune button and then the model will be finet
 
 # How to go ahead with this thing:
 
-Frist start with just one task like text-generation, as there are tons of resources available for finetuning LLMs for text-generation. Using those resources I can figure out the hyperparameters and then creating a gradio interface for that won't be that hard. Then I can move on to other tasks like classification, etc.
+First start with just one task like text-generation, as there are tons of resources available for finetuning LLMs for text-generation. Using those resources I can figure out the hyperparameters and then creating a gradio interface for that won't be that hard. Then I can move on to other tasks like classification, etc.
 
 # What I need to do:
 
-- [ ] Create a gradio interface
-- [ ] Figure out different hyperparameters for text-generation
-- [ ] Start implementing the finetuning part
+- [x] Create a gradio interface
+- [x] Figure out different hyperparameters for text-generation
+- [x] Start implementing the finetuning part
 - [ ] Figure the GPU and CPU part
-- [ ] Figure out the logging part
-- [ ] Containerize the whole thing
+- [x] Figure out the logging part
 - [ ] Write the documentation
 
 # Things I think which are difficult:

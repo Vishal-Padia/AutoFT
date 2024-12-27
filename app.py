@@ -1,10 +1,10 @@
 import json
 import gradio as gr
-from custom_logging import getLogger
 from train import finetune_model
+from custom_logging import logger
 
 # Import the logger
-logger = getLogger("AutoFT")
+# logger = logger("AutoFT")
 
 
 def main():
@@ -32,6 +32,12 @@ def main():
                 label="Model Name (Hugging Face Model Hub)",
                 placeholder="e.g., gpt2, t5-small, bert-base-uncased",
                 elem_id="model_name",
+            )
+
+            hf_token = gr.Textbox(
+                label="Hugging Face Token (optional)",
+                placeholder="Enter your Hugging Face Token",
+                elem_id="hf_token",
             )
 
         with gr.Row():
@@ -101,6 +107,7 @@ def main():
             dataset_name,
             config_name,
             model_name,
+            hf_token,
             wandb_api_key,
             wandb_project_name,
             task_type,
@@ -125,6 +132,7 @@ def main():
                     dataset_name,
                     config_name,
                     model_name,
+                    hf_token,
                     wandb_api_key,
                     wandb_project_name,
                     task_type,
@@ -149,6 +157,7 @@ def main():
             dataset_name,
             config_name,
             model_name,
+            hf_token,
             wandb_api_key,
             wandb_project_name,
             task_type,
@@ -165,6 +174,7 @@ def main():
                     "dataset_name": dataset_name,
                     "config_name": config_name,
                     "model_name": model_name,
+                    "hf_token": hf_token,
                     "wandb_api_key": wandb_api_key,
                     "wandb_project_name": wandb_project_name,
                     "task_type": task_type,
@@ -194,6 +204,7 @@ def main():
                     config.get("dataset_name", ""),
                     config.get("config_name", ""),
                     config.get("model_name", ""),
+                    config.get("hf_token", ""),
                     config.get("wandb_api_key", ""),
                     config.get("wandb_project_name", ""),
                     config.get("task_type", "Sequence Classification"),
@@ -216,6 +227,7 @@ def main():
                 dataset_name,
                 config_name,
                 model_name,
+                hf_token,
                 wandb_api_key,
                 wandb_project_name,
                 task_type,
@@ -238,6 +250,7 @@ def main():
                 dataset_name,
                 config_name,
                 model_name,
+                hf_token,
                 wandb_api_key,
                 wandb_project_name,
                 task_type,
@@ -258,6 +271,7 @@ def main():
                 dataset_name,
                 config_name,
                 model_name,
+                hf_token,
                 wandb_api_key,
                 wandb_project_name,
                 task_type,
