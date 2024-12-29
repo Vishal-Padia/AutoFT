@@ -2,6 +2,9 @@
 
 Basically want to pivot AutoTrain's functionality but for finetuning LLMs. Not that great of idea but I think it's worth a shot.
 
+# Here's how this looks:
+![image](images/image.png)
+
 # How would it work:
 
 A streamlit or a gradio interface where the user will pass a dataset and model name (both needs to be present on Huggingface). Then user will choose the task (classification, text-generation, etc). Then the user will pass in the hyperparameters, but the user can also choose to use the default hyperparameters. And the logging will be done by Weight and Biases (wandb, The user also need to pass their wandb API key).
@@ -17,9 +20,18 @@ First start with just one task like text-generation, as there are tons of resour
 - [x] Create a gradio interface
 - [x] Figure out different hyperparameters for text-generation
 - [x] Start implementing the finetuning part
-- [ ] Figure the GPU and CPU part
+- [x] Figure the GPU and CPU part
 - [x] Figure out the logging part
 - [ ] Write the documentation
+- [ ] Add more tasks (QnA, Machine Translation, etc)
+- [ ] Research about hyperparameters for different tasks
+- [ ] Talk to someone who can help in hosting this on huggingface spaces
+- [ ] Add more features
+- [ ] Beautify the gradio interface
+- [ ] Tell more people about this
+- [ ] Add features for more types of finetuning (like Supervised FT, Few Shot learning, Transfer learning, etc)
+- [ ] Get someone to contribute to this project along with me
+- [ ] Make this more generalized
 
 # Things I think which are difficult:
 
