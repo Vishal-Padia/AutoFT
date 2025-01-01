@@ -1,9 +1,6 @@
 # Purpose of this:
 
-Basically want to pivot AutoTrain's functionality but for finetuning LLMs. Not that great of idea but I think it's worth a shot.
-
-# Here's how this looks:
-![image](images/image.png)
+Basically want to create a tool like AutoTrain for specifically for finetuning LLMs.
 
 # How would it work:
 
@@ -22,16 +19,33 @@ First start with just one task like text-generation, as there are tons of resour
 - [x] Start implementing the finetuning part
 - [x] Figure the GPU and CPU part
 - [x] Figure out the logging part
+- [x] Create different files and functions for different tasks
 - [ ] Write the documentation
+- [ ] Test the code
 - [ ] Add more tasks (QnA, Machine Translation, etc)
 - [ ] Research about hyperparameters for different tasks
 - [ ] Talk to someone who can help in hosting this on huggingface spaces
 - [ ] Add more features
-- [ ] Beautify the gradio interface
-- [ ] Tell more people about this
+- [x] Beautify the gradio interface
+- [ ] Post of X about this project
+- [ ] Post of LinkedIn about this project
 - [ ] Add features for more types of finetuning (like Supervised FT, Few Shot learning, Transfer learning, etc)
 - [ ] Get someone to contribute to this project along with me
 - [ ] Make this more generalized
+
+# Here's how this looks:
+
+Model & Dataset Tab:
+![image](images/model_dataset_tab.png)
+
+Hyperparameters Tab:
+![image](images/hyperparameters_tab.png)
+
+Data Columns Tab:
+![image](images/data_columns_tab.png)
+
+Advance Settings Tab:
+![image](images/adv_settings_tab.png)
 
 # Things I think which are difficult:
 
