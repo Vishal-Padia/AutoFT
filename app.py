@@ -1,106 +1,154 @@
 import json
 import gradio as gr
 from train import finetune_model
-from custom_logging import logger
+from utils.logging_utils import logger
 
-# Import the logger
-# logger = logger("AutoFT")
+# setting Jetbrains Mono as the default font for the interface
+custom_css = """
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+* {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+"""
 
 
 def main():
     # Title and description for the interface
     title = "AutoFT - FineTune LLMs Easily"
-    description = "Easily configure and fine-tune your model with the parameters below."
+    description = (
+        "Welcome to AutoFT! This tool simplifies fine-tuning large language models (LLMs) for various tasks. "
+        "Configure your model, dataset, and hyperparameters below, and start training with just one click!"
+    )
 
     # Create input fields and dropdowns for various parameters
-    with gr.Blocks(theme=gr.themes.Monochrome()) as demo:
-        gr.Markdown(f"<h1>{title}</h1>")
+    with gr.Blocks(theme="allenai/gradio-theme", css=custom_css) as demo:
+        gr.Markdown(f"# {title}")
         gr.Markdown(description)
 
+        with gr.Tabs():
+            # Tab 1: Model and Dataset Configuration
+            with gr.Tab("Model & Dataset"):
+                with gr.Row():
+                    model_name = gr.Textbox(
+                        label="Model Name (Hugging Face Model Hub)",
+                        placeholder="e.g., gpt2, t5-small, bert-base-uncased",
+                        info="Enter the name of the pre-trained model from Hugging Face.",
+                    )
+                    dataset_name = gr.Textbox(
+                        label="Dataset Name (Hugging Face Datasets)",
+                        placeholder="e.g., wikitext, cnn_dailymail, imdb",
+                        info="Enter the name of the dataset from Hugging Face.",
+                    )
+                    config_name = gr.Textbox(
+                        label="Config Name (optional)",
+                        placeholder="e.g., wikitext-103-v1 for wikitext",
+                        info="If the dataset has multiple configurations, specify one here.",
+                    )
+
+                with gr.Row():
+                    task_type = gr.Dropdown(
+                        label="Task Type",
+                        choices=[
+                            "Text Generation",
+                            "Summarization",
+                            "Sequence Classification",
+                        ],
+                        value="Sequence Classification",
+                        info="Select the task you want to fine-tune the model for.",
+                    )
+                    hf_token = gr.Textbox(
+                        label="Hugging Face Token (optional)",
+                        placeholder="Enter your Hugging Face Token",
+                        info="Required for private models or datasets.",
+                        type="password",
+                    )
+
+            # Tab 2: Hyperparameters
+            with gr.Tab("Hyperparameters"):
+                with gr.Row():
+                    num_epochs = gr.Number(
+                        label="Number of Epochs",
+                        value=3,
+                        info="Number of times the model will see the entire dataset.",
+                    )
+                    batch_size = gr.Number(
+                        label="Batch Size",
+                        value=2,
+                        info="Number of samples processed before the model is updated.",
+                    )
+                    learning_rate = gr.Number(
+                        label="Learning Rate",
+                        value=0.000001,
+                        info="Step size for the optimizer during training. (eg: 1e-5 for 0.00001)",
+                    )
+
+                with gr.Row():
+                    optimizer = gr.Dropdown(
+                        label="Optimizer",
+                        choices=["Adam", "SGD", "RMSprop"],
+                        value="Adam",
+                        info="Optimization algorithm to use during training.",
+                    )
+                    seed = gr.Number(
+                        label="Seed",
+                        value=42,
+                        info="Random seed for reproducibility.",
+                    )
+
+            # Tab 3: Data Columns
+            with gr.Tab("Data Columns"):
+                with gr.Row():
+                    input_column = gr.Textbox(
+                        label="Input Column",
+                        placeholder="e.g., text, question, article",
+                        value="text",
+                        info="Name of the column in the dataset containing the input data.",
+                    )
+                    output_column = gr.Textbox(
+                        label="Output Column (optional)",
+                        placeholder="e.g., answer, summary",
+                        info="Name of the column in the dataset containing the output data (if applicable).",
+                    )
+
+            # Tab 4: Advanced Settings
+            with gr.Tab("Advanced Settings"):
+                with gr.Row():
+                    wandb_api_key = gr.Textbox(
+                        label="Wandb API Key",
+                        placeholder="Enter your Wandb API Key",
+                        info="Required for logging training metrics to Weights & Biases.",
+                        type="password",
+                    )
+                    wandb_project_name = gr.Textbox(
+                        label="Wandb Project Name",
+                        placeholder="Enter your Wandb Project Name",
+                        info="Name of the Wandb project to log results to.",
+                    )
+                    wandb_run_name = gr.Textbox(
+                        label="Wandb Run Name (optional)",
+                        placeholder="Enter your Wandb Run Name",
+                        info="Name of the Wandb run to log results to.",
+                    )
+
+                with gr.Row():
+                    file_upload = gr.File(
+                        label="Upload Dataset (CSV/JSON)",
+                    )
+                    file_type = gr.Dropdown(
+                        label="File Type",
+                        choices=["csv", "json"],
+                        value="csv",
+                        info="Select the format of the uploaded dataset.",
+                    )
+
+        # Buttons
         with gr.Row():
-            dataset_name = gr.Textbox(
-                label="Dataset Name (Hugging Face Datasets)",
-                placeholder="e.g., wikitext, cnn_dailymail, imdb",
-                elem_id="dataset_name",
-            )
-            config_name = gr.Textbox(
-                label="Config Name (optional)",
-                placeholder="e.g., wikitext-103-v1 for wikitext",
-                elem_id="config_name",
-            )
-            model_name = gr.Textbox(
-                label="Model Name (Hugging Face Model Hub)",
-                placeholder="e.g., gpt2, t5-small, bert-base-uncased",
-                elem_id="model_name",
-            )
+            submit_button = gr.Button("Start Fine-Tuning", variant="primary")
+            save_button = gr.Button("Save Configuration")
+            load_button = gr.Button("Load Configuration")
 
-            hf_token = gr.Textbox(
-                label="Hugging Face Token (optional)",
-                placeholder="Enter your Hugging Face Token",
-                elem_id="hf_token",
-            )
-
-        with gr.Row():
-            wandb_api_key = gr.Textbox(
-                label="Wandb API Key",
-                placeholder="Enter your Wandb API Key",
-                elem_id="wandb_api_key",
-            )
-            wandb_project_name = gr.Textbox(
-                label="Wandb Project Name",
-                placeholder="Enter your Wandb Project Name",
-                elem_id="wandb_project_name",
-            )
-
-        task_type = gr.Dropdown(
-            choices=["Text Generation", "Summarization", "Sequence Classification"],
-            label="Task Type",
-            value="Sequence Classification",
-            elem_id="task_type",
-        )
-
-        with gr.Row():
-            input_column = gr.Textbox(
-                label="Input Column",
-                placeholder="e.g., text, question, article",
-                value="text",  # Default value
-            )
-            output_column = gr.Textbox(
-                label="Output Column (optional)",
-                placeholder="e.g., answer, summary",
-            )
-
-        with gr.Row():
-            num_epochs = gr.Number(
-                label="Number of Epochs", value=3, elem_id="num_epochs"
-            )
-            batch_size = gr.Number(label="Batch Size", value=2, elem_id="batch_size")
-
-        with gr.Row():
-            learning_rate = gr.Number(
-                label="Learning Rate", value=0.00003, elem_id="learning_rate"
-            )
-            optimizer = gr.Dropdown(
-                choices=["Adam", "SGD", "RMSprop"],
-                label="Optimizer",
-                value="Adam",
-                elem_id="optimizer",
-            )
-
-        seed = gr.Number(label="Seed", value=42, elem_id="seed")
-
-        with gr.Row():
-            file_upload = gr.File(label="Upload Dataset (CSV/JSON)")
-            file_type = gr.Dropdown(
-                label="File Type", choices=["csv", "json"], value="csv"
-            )
-
-        submit_button = gr.Button("Fine-Tune Model")
+        # Output
         output = gr.Textbox(label="Training Logs", interactive=False)
-
-        # Save and load configuration buttons
-        save_button = gr.Button("Save Configuration")
-        load_button = gr.Button("Load Configuration")
 
         # Process inputs when the button is clicked
         def process_inputs(
@@ -120,6 +168,7 @@ def main():
             output_column,
             file_upload,
             file_type,
+            wandb_run_name,
         ):
             try:
                 logger.info("Starting fine-tuning process...")
@@ -145,6 +194,7 @@ def main():
                     output_column,
                     file_upload,
                     file_type,
+                    wandb_run_name,
                 )
                 logger.info("Fine-tuning completed successfully!")
                 return logs
@@ -153,38 +203,24 @@ def main():
                 return f"Error during training: {str(e)}"
 
         # Save configuration
-        def save_config(
-            dataset_name,
-            config_name,
-            model_name,
-            hf_token,
-            wandb_api_key,
-            wandb_project_name,
-            task_type,
-            num_epochs,
-            batch_size,
-            learning_rate,
-            optimizer,
-            seed,
-            input_column,
-            output_column,
-        ):
+        def save_config(*args):
             try:
                 config = {
-                    "dataset_name": dataset_name,
-                    "config_name": config_name,
-                    "model_name": model_name,
-                    "hf_token": hf_token,
-                    "wandb_api_key": wandb_api_key,
-                    "wandb_project_name": wandb_project_name,
-                    "task_type": task_type,
-                    "num_epochs": num_epochs,
-                    "batch_size": batch_size,
-                    "learning_rate": learning_rate,
-                    "optimizer": optimizer,
-                    "seed": seed,
-                    "input_column": input_column,
-                    "output_column": output_column,
+                    "dataset_name": args[0],
+                    "config_name": args[1],
+                    "model_name": args[2],
+                    "hf_token": args[3],
+                    "wandb_api_key": args[4],
+                    "wandb_project_name": args[5],
+                    "task_type": args[6],
+                    "num_epochs": args[7],
+                    "batch_size": args[8],
+                    "learning_rate": args[9],
+                    "optimizer": args[10],
+                    "seed": args[11],
+                    "input_column": args[12],
+                    "output_column": args[13],
+                    "wandb_run_name": args[14],
                 }
                 with open("config.json", "w") as f:
                     json.dump(config, f)
@@ -210,11 +246,12 @@ def main():
                     config.get("task_type", "Sequence Classification"),
                     config.get("num_epochs", 3),
                     config.get("batch_size", 2),
-                    config.get("learning_rate", 0.00003),
+                    config.get("learning_rate", "1e-5"),
                     config.get("optimizer", "Adam"),
                     config.get("seed", 42),
                     config.get("input_column", "text"),
                     config.get("output_column", ""),
+                    config.get("wandb_run_name", ""),
                 ]
             except FileNotFoundError:
                 logger.error("Configuration file not found!")
@@ -240,6 +277,7 @@ def main():
                 output_column,
                 file_upload,
                 file_type,
+                wandb_run_name,
             ],
             outputs=output,
         )
@@ -261,6 +299,7 @@ def main():
                 seed,
                 input_column,
                 output_column,
+                wandb_run_name,
             ],
             outputs=output,
         )
@@ -282,6 +321,7 @@ def main():
                 seed,
                 input_column,
                 output_column,
+                wandb_run_name,
             ],
         )
 

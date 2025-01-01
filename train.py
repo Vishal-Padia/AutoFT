@@ -1,19 +1,18 @@
-import os
 import wandb
 import torch
 import random
+
 import numpy as np
-from datasets import load_dataset, Dataset
+
 from transformers import (
     EarlyStoppingCallback,
     TrainingArguments,
     Trainer,
-    AutoModelForSequenceClassification,
-    AutoModelForCausalLM,
-    AutoModelForSeq2SeqLM,
-    AutoTokenizer,
 )
-from custom_logging import logger
+from utils.logging_utils import logger
+from utils.model_utils import setup_padding_token
+from utils.data_utils import load_dataset_from_hf, load_local_dataset
+from tasks import text_generation, summarization, sequence_classification
 
 
 def finetune_model(
@@ -33,6 +32,7 @@ def finetune_model(
     output_column,
     file_upload,
     file_type,
+    wandb_run_name,
 ):
     """
     This function will fine-tune a pre-trained model on a given dataset based on the parameters provided.
@@ -64,64 +64,96 @@ def finetune_model(
     try:
         logger.info(f"Loading dataset: {dataset_name}...")
         if file_upload is not None:
-            if file_type == "csv":
-                dataset = Dataset.from_csv(file_upload)
-            elif file_type == "json":
-                dataset = Dataset.from_json(file_upload)
+            dataset = load_local_dataset(file_upload, file_type)
         else:
-            if config_name:
-                dataset_name = str(dataset_name)
-                config_name = str(config_name)
-                dataset = load_dataset(dataset_name, config_name)
-            else:
-                dataset = load_dataset(dataset_name)
+            dataset = load_dataset_from_hf(dataset_name, config_name)
         logger.info("Dataset loaded successfully!")
     except Exception as e:
         logger.error(f"Failed to load dataset: {str(e)}")
         raise ValueError(f"Failed to load dataset: {str(e)}")
 
-    # Load the pre-trained model and tokenizer
+    # Load the model and tokenizer based on the task
     try:
-        logger.info(f"Loading the tokenizer for model: {model_name}...")
-        tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
-
-        if tokenizer.pad_token is None:
-            logger.info("Padding token not found. Adding padding token...")
-            tokenizer.add_special_tokens({"pad_token": "[PAD]"})
-            logger.info("Padding token added successfully!")
-        logger.info("Tokenizer loaded successfully!")
-
-        logger.info(f"Loading model: {model_name}...")
+        logger.info(f"Loading model and tokenizer for task: {task_type}...")
         if task_type == "Text Generation":
-            model = AutoModelForCausalLM.from_pretrained(model_name, token=hf_token)
+            model, tokenizer = text_generation.load_model_and_tokenizer(
+                model_name, hf_token
+            )
+            # resizing the model
+            model.resize_token_embeddings(len(tokenizer))
+
+            # Add padding token to the tokenizer
+            setup_padding_token(tokenizer)
+
+            # Log vocabulary sizes before resizing
+            logger.info(f"Original tokenizer vocab size: {len(tokenizer)}")
+            logger.info(f"Original model vocab size: {model.config.vocab_size}")
+
+            # Now resize the model embeddings to match the new tokenizer size
+            model.resize_token_embeddings(len(tokenizer))
+
+            # Verify sizes match
+            logger.info(f"New tokenizer vocab size: {len(tokenizer)}")
+            logger.info(f"New model vocab size: {model.config.vocab_size}")
+
+            # Add a verification check
+            if len(tokenizer) != model.config.vocab_size:
+                raise ValueError(
+                    f"Vocabulary size mismatch: Tokenizer={len(tokenizer)}, Model={model.config.vocab_size}"
+                )
+
+            # Preprocess the data for training
+            tokenized_dataset = text_generation.preprocess_data(
+                dataset, tokenizer, input_column
+            )
+
+            # Add debug check for token IDs
+            sample_batch = next(iter(tokenized_dataset["train"]))
+            max_token_id = max(sample_batch["input_ids"])
+            if max_token_id >= len(tokenizer):
+                raise ValueError(
+                    f"Token ID {max_token_id} out of range (vocab size: {len(tokenizer)})"
+                )
+
         elif task_type == "Summarization":
-            model = AutoModelForSeq2SeqLM.from_pretrained(model_name, token=hf_token)
+            model, tokenizer = summarization.load_model_and_tokenizer(
+                model_name, hf_token
+            )
+            # resizing the model
+            model.resize_token_embeddings(len(tokenizer))
+
+            # Preprocess the data for training
+            tokenized_dataset = summarization.preprocess_data(
+                dataset, tokenizer, input_column, output_column
+            )
         elif task_type == "Sequence Classification":
-            model = AutoModelForSequenceClassification.from_pretrained(
-                model_name, token=hf_token
+            model, tokenizer = sequence_classification.load_model_and_tokenizer(
+                model_name, hf_token
+            )
+            # resizing the model
+            model.resize_token_embeddings(len(tokenizer))
+
+            # Preprocess the data for training
+            tokenized_dataset = sequence_classification.preprocess_data(
+                dataset, tokenizer, input_column
             )
         else:
             raise ValueError(f"Unsupported task type: {task_type}")
-        logger.info("Model loaded successfully!")
+        logger.info("Model and tokenizer loaded successfully!")
     except Exception as e:
         logger.error(f"Failed to load model: {str(e)}")
         raise ValueError(f"Failed to load model: {str(e)}")
 
-    # Tokenize the dataset
-    logger.info("Tokenizing dataset...")
-
-    def tokenize_function(examples):
-        tokenized = tokenizer(
-            examples[input_column],
-            padding="max_length",  # Pad to the maximum length
-            truncation=True,  # Truncate to the maximum length
-            max_length=512,  # Set a reasonable max length
-        )
-        tokenized["labels"] = tokenized["labels"].copy()
-        return tokenized
-
-    tokenized_dataset = dataset.map(tokenize_function, batched=True)
-    logger.info("Dataset tokenized successfully!")
+    # Debug: Check token IDs
+    # logger.info("Checking token IDs...")
+    # for idx, example in enumerate(tokenized_dataset["train"]):
+    #     input_ids = example["input_ids"]
+    #     invalid_ids = [id for id in input_ids if id >= len(tokenizer)]
+    #     if invalid_ids:
+    #         logger.error(f"Invalid token IDs found in example {idx}: {invalid_ids}")
+    #         logger.error(f"Tokenizer vocabulary size: {len(tokenizer)}")
+    #         logger.error(f"Model vocabulary size: {model.config.vocab_size}")
+    #         raise ValueError(f"Token IDs {invalid_ids} out of range!")
 
     # Prepare the dataset for training
     train_dataset = tokenized_dataset["train"]
@@ -132,11 +164,12 @@ def finetune_model(
     # Define the training arguments
     logger.info("Setting up training arguments...")
     training_args = TrainingArguments(
+        run_name=wandb_run_name,
         output_dir="./results",
         eval_strategy="epoch",
         learning_rate=learning_rate,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
+        per_device_train_batch_size=2,
+        per_device_eval_batch_size=2,
         num_train_epochs=num_epochs,
         weight_decay=0.01,
         logging_dir="./logs",
@@ -147,7 +180,7 @@ def finetune_model(
         metric_for_best_model="accuracy",
         greater_is_better=True,
         report_to="wandb",
-        fp16=True,  # Enable mixed precision for GPU
+        fp16=True,
     )
 
     # Get the optimizer
