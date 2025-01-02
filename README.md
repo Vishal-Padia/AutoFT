@@ -29,6 +29,8 @@ First start with just one task like text-generation, as there are tons of resour
 - [x] Beautify the gradio interface
 - [ ] Post of X about this project
 - [ ] Post of LinkedIn about this project
+- [ ] Rsearch about different types of finetuning (like supervised, few shot, etc)
+- [ ] Move different tasks to a sidebar and have different tabs for different types of finetuning (like supervised, few shot, etc)
 - [ ] Add features for more types of finetuning (like Supervised FT, Few Shot learning, Transfer learning, etc)
 - [ ] Get someone to contribute to this project along with me
 - [ ] Make this more generalized
@@ -50,3 +52,6 @@ Advance Settings Tab:
 # Things I think which are difficult:
 
 The most difficult part would be to figure out the hyperparameters for different tasks. But I think I can manage that by looking at the resources available online. Also finetuning LLMs require GPUs, so I need to figure out if I can just have a toggle button for the user to choose between CPU and GPU. If the user chooses either one of them then I need check if I can pass it in the code with device argument.
+
+02-01-2025
+I want to add different types of finetuining methods in this tool. But I don't know how all of those work. So I think first I'll need to understand the working of all those methods and then I can implement them in this tool. I think I should start with supervised finetuning as that is the most common one. Then I can move on to other methods like few shot learning, transfer learning, etc. I think I should also add a sidebar in the gradio interface where the user can choose between different types of finetuning methods and then in that it will different types of tasks.
