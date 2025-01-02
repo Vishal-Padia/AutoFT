@@ -3,13 +3,24 @@ import gradio as gr
 from train import finetune_model
 from utils.logging_utils import logger
 
-# setting Jetbrains Mono as the default font for the interface
+# Setting Jetbrains Mono as the default font for the interface
 custom_css = """
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 * {
     font-family: 'JetBrains Mono', monospace !important;
 }
 """
+
+
+def show_wip_message(task_type):
+    """
+    Displays a pop-up message if the selected task type is "Sequence Classification".
+    """
+    if task_type == "Sequence Classification":
+        return gr.Info(
+            "Sequence Classification is currently a work in progress. Please check back later!"
+        )
+    return None
 
 
 def main():
@@ -53,7 +64,7 @@ def main():
                             "Summarization",
                             "Sequence Classification",
                         ],
-                        value="Sequence Classification",
+                        value="Text Generation",  # Default to Text Generation
                         info="Select the task you want to fine-tune the model for.",
                     )
                     hf_token = gr.Textbox(
@@ -150,6 +161,13 @@ def main():
         # Output
         output = gr.Textbox(label="Training Logs", interactive=False)
 
+        # Show WIP message when task type is changed
+        task_type.change(
+            fn=show_wip_message,
+            inputs=task_type,
+            outputs=None,
+        )
+
         # Process inputs when the button is clicked
         def process_inputs(
             dataset_name,
@@ -243,7 +261,7 @@ def main():
                     config.get("hf_token", ""),
                     config.get("wandb_api_key", ""),
                     config.get("wandb_project_name", ""),
-                    config.get("task_type", "Sequence Classification"),
+                    config.get("task_type", "Text Generation"),
                     config.get("num_epochs", 3),
                     config.get("batch_size", 2),
                     config.get("learning_rate", "1e-5"),

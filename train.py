@@ -147,7 +147,9 @@ def finetune_model(
     # Prepare the dataset for training
     train_dataset = tokenized_dataset["train"]
     eval_dataset = (
-        tokenized_dataset["validation"] if "validation" in tokenized_dataset else None
+        tokenized_dataset["validation"]
+        if "validation" in tokenized_dataset
+        else tokenized_dataset["test"] if "test" in tokenized_dataset else None
     )
 
     # Define the training arguments
@@ -157,8 +159,8 @@ def finetune_model(
         output_dir="./results",
         eval_strategy="epoch",
         learning_rate=learning_rate,
-        per_device_train_batch_size=2,
-        per_device_eval_batch_size=2,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
         num_train_epochs=num_epochs,
         weight_decay=0.01,
         logging_dir="./logs",
@@ -187,7 +189,8 @@ def finetune_model(
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        processing_class=tokenizer,
+        # processing_class=tokenizer,
+        tokenizer=tokenizer,
         optimizers=(optimizer, None),
         compute_metrics=lambda eval_pred: {
             "accuracy": (eval_pred.label_ids == eval_pred.predictions.argmax(-1)).mean()
