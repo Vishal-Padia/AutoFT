@@ -141,16 +141,16 @@ def main():
                         info="Name of the Wandb run to log results to.",
                     )
 
-                with gr.Row():
-                    file_upload = gr.File(
-                        label="Upload Dataset (CSV/JSON)",
-                    )
-                    file_type = gr.Dropdown(
-                        label="File Type",
-                        choices=["csv", "json"],
-                        value="csv",
-                        info="Select the format of the uploaded dataset.",
-                    )
+                # with gr.Row():
+                #     file_upload = gr.File(
+                #         label="Upload Dataset (CSV/JSON)",
+                #     )
+                #     file_type = gr.Dropdown(
+                #         label="File Type",
+                #         choices=["csv", "json"],
+                #         value="csv",
+                #         info="Select the format of the uploaded dataset.",
+                #     )
 
         # Buttons
         with gr.Row():
@@ -184,16 +184,16 @@ def main():
             seed,
             input_column,
             output_column,
-            file_upload,
-            file_type,
+            # file_upload,
+            # file_type,
             wandb_run_name,
         ):
             try:
                 logger.info("Starting fine-tuning process...")
-                if file_upload is not None:
-                    dataset_name = file_upload.name
-                else:
-                    dataset_name = dataset_name
+                # if file_upload is not None:
+                #     # dataset_name = file_upload.name
+                # else:
+                dataset_name = dataset_name
 
                 logs = finetune_model(
                     dataset_name,
@@ -210,8 +210,8 @@ def main():
                     seed,
                     input_column,
                     output_column,
-                    file_upload,
-                    file_type,
+                    # file_upload,
+                    # file_type,
                     wandb_run_name,
                 )
                 logger.info("Fine-tuning completed successfully!")
@@ -293,8 +293,8 @@ def main():
                 seed,
                 input_column,
                 output_column,
-                file_upload,
-                file_type,
+                # file_upload,
+                # file_type,
                 wandb_run_name,
             ],
             outputs=output,

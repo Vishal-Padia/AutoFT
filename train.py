@@ -30,8 +30,8 @@ def finetune_model(
     seed,
     input_column,
     output_column,
-    file_upload,
-    file_type,
+    # file_upload,
+    # file_type,
     wandb_run_name,
 ):
     """
@@ -63,10 +63,10 @@ def finetune_model(
     # Load the dataset
     try:
         logger.info(f"Loading dataset: {dataset_name}...")
-        if file_upload is not None:
-            dataset = load_local_dataset(file_upload, file_type)
-        else:
-            dataset = load_dataset_from_hf(dataset_name, config_name)
+        # if file_upload is not None:
+        #     dataset = load_local_dataset(file_upload, file_type)
+        # else:
+        dataset = load_dataset_from_hf(dataset_name, config_name)
         logger.info("Dataset loaded successfully!")
     except Exception as e:
         logger.error(f"Failed to load dataset: {str(e)}")
