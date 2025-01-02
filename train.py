@@ -144,17 +144,6 @@ def finetune_model(
         logger.error(f"Failed to load model: {str(e)}")
         raise ValueError(f"Failed to load model: {str(e)}")
 
-    # Debug: Check token IDs
-    # logger.info("Checking token IDs...")
-    # for idx, example in enumerate(tokenized_dataset["train"]):
-    #     input_ids = example["input_ids"]
-    #     invalid_ids = [id for id in input_ids if id >= len(tokenizer)]
-    #     if invalid_ids:
-    #         logger.error(f"Invalid token IDs found in example {idx}: {invalid_ids}")
-    #         logger.error(f"Tokenizer vocabulary size: {len(tokenizer)}")
-    #         logger.error(f"Model vocabulary size: {model.config.vocab_size}")
-    #         raise ValueError(f"Token IDs {invalid_ids} out of range!")
-
     # Prepare the dataset for training
     train_dataset = tokenized_dataset["train"]
     eval_dataset = (

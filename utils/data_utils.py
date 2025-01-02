@@ -10,8 +10,8 @@ def load_dataset_from_hf(dataset_name: str, config_name: str = None):
     if config_name:
         dataset_name = str(dataset_name)
         config_name = str(config_name)
-        return load_dataset(dataset_name, config_name)
-    return load_dataset(str(dataset_name))
+        return load_dataset(dataset_name, config_name, trust_remote_code=True)
+    return load_dataset(str(dataset_name), trust_remote_code=True)
 
 
 def load_local_dataset(file_upload, file_type):
