@@ -68,8 +68,8 @@ First start with just one task like text generation, as there are tons of resour
 - [ ] Talk to someone who can help in hosting this on Hugging Face Spaces
 - [ ] Add more features
 - [x] Beautify Gradio interface
-- [ ] Post on X about this project
-- [ ] Post on LinkedIn about this project
+- [x] Post on X about this project
+- [x] Post on LinkedIn about this project
 - [ ] Research different types of fine-tuning (like supervised, few-shot, etc.)
 - [ ] Move different tasks to a sidebar and have different tabs for different types of fine-tuning (like supervised, few-shot, etc.)
 - [ ] Add features for more types of fine-tuning (like Supervised FT, Few-Shot learning, Transfer learning, etc.)
