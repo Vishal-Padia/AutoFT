@@ -75,6 +75,8 @@ First start with just one task like text generation, as there are tons of resour
 - [ ] Add features for more types of fine-tuning (like Supervised FT, Few-Shot learning, Transfer learning, etc.)
 - [ ] Get someone to contribute to this project along with me
 - [ ] Make this more generalized
+- [ ] Research about how I can add AWS, GCP, Azure for this (meaning just have a button which will let the user finetue the LLM on cloud instance)
+- [ ] Create a landing page for this describing features of AutoFT and more 
 
 # Here's how this looks:
 
